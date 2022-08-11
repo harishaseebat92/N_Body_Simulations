@@ -94,9 +94,10 @@ class SolarSystem:
         self.bodies.append(body)
 
     def update_all(self):
-      for body in self.bodies:
-        body.move()
-        body.draw()
+        self.bodies.sort(key=lambda item: item.position[0])
+        for body in self.bodies:
+            body.move()
+            body.draw()
     def draw_all(self):
         self.ax.set_xlim((-self.size / 2, self.size / 2))
         self.ax.set_ylim((-self.size / 2, self.size / 2))
@@ -155,9 +156,9 @@ class SolarSystemBody:
         )
     def accel(self, other):
         distance = Vector(*other.position) - Vector(*self.position)
-        distance_mag = distance.get_magnitude()
+        distance_mag = distance.mag()
         force_mag = self.mass * other.mass / (distance_mag ** 2)
-        force = distance.normalize() * force_mag
+        force = distance.norm() * force_mag
         reverse = 1
         for body in self, other:
             acceleration = force / body.mass
@@ -168,4 +169,45 @@ solar_system = SolarSystem(400)
 
 body = SolarSystemBody(solar_system, 100, velocity=(1, 1, 1))
 
-class Sun(Sol)
+class Sun(SolarSystemBody):
+    def __init__(
+        self,
+        solar_system,
+        mass=10_000,
+        position=(0, 0, 0),
+        velocity=(0, 0, 0),
+    ):
+        super(Sun, self).__init__(solar_system, mass, position, velocity)
+        self.colour = "yellow"
+class Planet(SolarSystemBody):
+    colours = itertools.cycle([(1, 0, 0), (0, 1, 0), (0, 0, 1)])
+    def __init__(
+        self,
+        solar_system,
+        mass=10,
+        position=(0, 0, 0),
+        velocity=(0, 0, 0),
+    ):
+        super(Planet, self).__init__(solar_system, mass, position, velocity)
+        self.colour = next(Planet.colours)
+
+
+solar_system = SolarSystem(400)
+sun = Sun(solar_system)
+planets = (
+    Planet(
+        solar_system,
+        position=(150, 50, 0),
+        velocity=(0, 5, 5),
+    ),
+    Planet(
+        solar_system,
+        mass=20,
+        position=(100, -50, 150),
+        velocity=(5, 0, 0)
+    )
+)
+for i in range(100):
+    solar_system.calc_all_force()
+    solar_system.update_all()
+    solar_system.draw_all()
